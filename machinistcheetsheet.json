@@ -1,0 +1,30 @@
+{"standard threads": [{"name": "0-80", "class": "2B", "minor": ".0465-.0514", "major": 0.06, "pitch": 0.0125, "drill": [{"standard": [{"size": 0.0469, "number": "3/64"}]}, {"roll form": [{"size": 0.055, "number": "#55"}]}]}, {"name": "2-56", "class": "2B", "minor": ".0667-.0737", "major": 0.086, "pitch": 0.01786, "drill": [{"standard": [{"size": 0.07, "number": "#50"}]}, {"roll form": [{"size": 0.0781, "number": "5/64"}]}]}, {"name": "4-40", "class": "2B", "minor": ".0849-.0939", "major": 0.112, "pitch": 0.025, "drill": [{"standard": [{"size": 0.089, "number": "#43"}]}, {"roll form": [{"size": 0.0995, "number": "#39"}]}]}, {"name": "6-32", "class": "2B", "minor": ".104-.114", "major": 0.138, "pitch": 0.03125, "drill": [{"standard": [{"size": 0.1065, "number": "#36"}]}, {"roll form": [{"size": 0.125, "number": "1/8"}]}]}, {"name": "8-32", "class": "2B", "minor": ".130-.139", "major": 0.164, "pitch": 0.03125, "drill": [{"standard": [{"size": 0.136, "number": "#29"}]}, {"roll form": [{"size": 0.1495, "number": "#25"}]}]}, {"name": "10-32", "class": "2B", "minor": ".156-.164", "major": 0.19, "pitch": 0.03125, "drill": [{"standard": [{"size": 0.159, "number": "#21"}]}, {"roll form": [{"size": 0.173, "number": "#17"}]}]}, {"name": "1/4-20", "class": "2B", "minor": ".196-.207", "major": 0.25, "pitch": 0.05, "drill": [{"standard": [{"size": 0.201, "number": "#7"}]}]}, {"name": "5/16-18", "class": "2B", "minor": ".252-.265", "major": 0.3125, "pitch": 0.05556, "drill": [{"standard": [{"size": 0.257, "number": "LTR F"}]}]}, {"name": "5/16-24", "class": "2B", "minor": ".267-.277", "major": 0.3125, "pitch": 0.04167, "drill": [{"standard": [{"size": 0.272, "number": "LTR I"}]}]}, {"name": "3/8-16", "class": "2B", "minor": ".307-.321", "major": 0.375, "pitch": 0.0625, "drill": [{"standard": [{"size": 0.3125, "number": "5/16"}]}]}, {"name": "3/8-24", "class": "2B", "minor": ".330-.340", "major": 0.375, "pitch": 0.04167, "drill": [{"standard": [{"size": 0.332, "number": "LTR Q"}]}]}],
+ "machine": [
+{"name": "Feeler", "data": [
+{"code": "M07", "description": "FLR 1 & FLR 2 Air Blast"}, 
+{"code": "M27", "description": "FLR 3 Air Blast"}, 
+{"code": "M48", "description": "Thru Spindle Coolant"}, 
+{"code": "M26", "description": "Unlock A Axis"},
+{"code": "G65P9832", "description": "Probe On"},
+{"code": "G65P9833", "description": "Probe Off"},
+{"code": "G65P9810", "description": "Probe - Protective Positioning"},
+{"code": "G65P9811", "description": "Probe - Single Point"},
+{"code": "G65P9814", "description": "Probe - Boss"},
+{"code": "G65P9834", "description": "Probe - Feature to Feature"},
+{"code": "M25", "description": "Lock A Axis"}]}, 
+
+{"name": "Mam-72", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "Mitsui", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "MX-520", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "Clem JR", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "Clem", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "Pixi", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "Big Yasda", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "Carmen", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "VMax", "data": [{"code": "M08", "description": "Random Comment"}]},
+{"name": "Big Scotty", "data": [
+{"code": "G131", "description": "Contour Control, Range 1-10"}, 
+{"code": "G130", "description": "Cancel Contour Control"}, 
+{"code": "M50", "description": "Thru Spindle Coolant"},  
+{"code": "M21", "description": "Unlock B axis"},  
+{"code": "M22", "description": "Lock B Axis"}]}]}
