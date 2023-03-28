@@ -322,5 +322,8 @@
       "name": "Powermill",
       "state": 0
     }
-  ]
+  ],
+  "formulas" : [
+    {"name":"SFM"}
+    }
 }
