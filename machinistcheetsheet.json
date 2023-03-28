@@ -323,8 +323,8 @@
       "state": 0
     }
   ],
-  "formulas" : [
+  "formulas" : 
+  [
     {"name":"SFM"}
-    ]
-    }
+  ]
 }
