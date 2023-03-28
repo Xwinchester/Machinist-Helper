@@ -321,10 +321,18 @@
     {
       "name": "Powermill",
       "state": 0
+    },
+       {
+      "name": "Testing This",
+      "state": 1
     }
   ],
   "formulas" : 
   [
-    {"name":"SFM"}
+    {"name":"SFM", "questions": ["Tool Diameter", "RPM"], "formula": ".262*[0]*[1]"},
+    {"name":"RPM",  "questions": ["SFM", "Diameter"], "formula": "3.82*[0]/[1]"},
+    {"name": "IPM",  "questions": ["Chip load per Tooth", "# of Teeth", "RPM"], "formula": "[0]*[1]*[2]"},
+    {"name": "FEED",  "questions": ["RPM", "# of Teeth", "Feed per Tooth"], "formula":  "[0]*[1]*[2]"},
+    {"name": "MRR",  "questions": ["ADOC", "RDOC", "Feed"], "formula":  "[0]*[1]*[2]"}
   ]
 }
