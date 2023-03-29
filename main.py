@@ -1,48 +1,118 @@
-import json, os, webbrowser
+import json, os, webbrowser, requests
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
+from tkinter import filedialog
 
 # globals
-DIR = 'data'
+DIR = os.path.join ('C:\\', 'Users', os.getlogin (), 'Machinist Cheat Sheet')
+BACKGROUND = '#345760'
 FILENAME = os.path.join(DIR,'machinistcheetsheet.json')
 ICON = os.path.join(DIR, 'icon.png')
+
+
+BACKGROUND_IMAGE = os.path.join(DIR, 'background.png')
+PROGRAM_TITLE = "Machinist Cheat Sheet"
 # version
-VERSION = '1.0.0'
-PROGRAMMED_TEXT = f"Programmed by Winchester Solutions Version {VERSION}"
+"""
+version 1.1 Revisions:
+    - Added A Option Menu to grab all taps involved in tap size
+    - Added Tap Drill Chart to main function
+version 1.2 Revision:
+    - Added a Folder Creator to Create generic folders that Corning uses.
+version 1.3 Revision:
+    - Revised formulas and folder creator to start from AppWindow and read everything from json file
+"""
+
+VERSION = "1.3.828"
+PROGRAMMED_TEXT = f"Powered by Winchester Automation Version {VERSION}"
+
+
+class AppWindow:
+    def __init__(self, parent=None, title=None):
+        self.MAIN_ROOT = parent
+        x, y = self.MAIN_ROOT.winfo_x(), self.MAIN_ROOT.winfo_y()
+
+        # Hides the Main Root
+        self.MAIN_ROOT.withdraw ()
+
+        # Create a new Toplevel window
+        self.TOP_LEVEL = tk.Toplevel(self.MAIN_ROOT)
+
+        self.TOP_LEVEL.protocol ("WM_DELETE_WINDOW", self.__on_close)
+
+        # Set the window title
+        if title != None:
+            self.TOP_LEVEL.title(PROGRAM_TITLE + " - " + title)
+
+        # Set the window background color
+        self.TOP_LEVEL.config(bg=BACKGROUND)
+
+        # Set the window size and position
+        self.TOP_LEVEL.geometry(f"660x425+{x}+{y}")
+
+        # Set the window icon
+        self.TOP_LEVEL.iconphoto(True, tk.PhotoImage(file=ICON))
+
+        # Disable resizing of the window
+        self.TOP_LEVEL.resizable(width=False, height=False)
+
+        # Setup Footer
+        Label(self.TOP_LEVEL, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
+
+
+    def __on_close(self):
+        self.MAIN_ROOT.deiconify()
+        self.TOP_LEVEL.destroy()
 
 class thread_helper:
 
     def __init__(self, root):
-        BACKGROUND = 'gray'
         x, y = root.winfo_x (), root.winfo_y ()
         root = tk.Toplevel(root)
         root.title ("Thread Helper")
         root.config (bg=BACKGROUND)
         root.geometry (f"660x425+{x}+{y}")
         root.iconphoto (True, PhotoImage (file=ICON))
-
+        root.resizable(width=False, height=False)
 
         with open (FILENAME, "r") as f:
             self.data = json.load (f)
         # Extract all the thread names
         thread_names = [thread_data["name"] for thread_data in self.data["standard threads"]]
+        #thread_names.sort()
 
         # Create a StringVar to hold the selected thread name
         self.selected_thread = tk.StringVar (root)
         self.selected_thread.set (thread_names[0])
 
+        # Create a StringVar to hold the selected thread type
+        self.selected_thread_type = tk.StringVar (root)
+        self.thread_types = ['Cutting', 'Roll Form']
+        self.selected_thread_type.set (self.thread_types[0])
+
+
         # Create a StringVar to hold the chamfer size
         self.selected_chamfer = tk.IntVar (root)
         self.selected_chamfer.set (.01)
 
-        # Create an OptionMenu of thread names
+        # create label
         thread_label = tk.Label (root, text="Select Thread:", bg=BACKGROUND, font=("Courier", 16))
         thread_label.pack (anchor="n")
-        self.thread_menu = tk.OptionMenu (root, self.selected_thread, *thread_names)
+
+
+        # Create an OptionMenu of thread names
+        self.option_frame = Frame(root, bg=BACKGROUND)
+        self.option_frame.pack(padx=10, pady=10)
+        self.thread_menu = tk.OptionMenu (self.option_frame, self.selected_thread, *thread_names)
         self.thread_menu.config(font=(None, 14))
         self.thread_menu['menu'].config (font=('Courier', 14))
-        self.thread_menu.pack (anchor="n")
+        self.thread_menu.grid(padx=10,row=0, column=0)
+
+        self.thread_menu_type = tk.OptionMenu (self.option_frame, self.selected_thread_type, *self.thread_types)
+        self.thread_menu_type.config(font=(None, 14))
+        self.thread_menu_type['menu'].config (font=('Courier', 14))
+        self.thread_menu_type.grid(padx=10, row=0, column=1)
 
         # Create a labeled frame to hold the thread data
         frame = tk.LabelFrame (root, text="Thread Data", padx=10, pady=10, font=(None, 22), bg=BACKGROUND)
@@ -89,8 +159,9 @@ class thread_helper:
         Label(root, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
 
         # Call the function to update the label when the selection changes
-        self.selected_thread.trace ("w", self.update_entries)
+        self.selected_thread.trace ("w", self.__reset_tap_type_menu)
         self.selected_chamfer.trace ("w", self.update_chamfer)
+        self.selected_thread_type.trace('w', self.update_entries)
         self.chamfer_size_user_entry.bind ("<FocusOut>", self.check_chamfer_entry)
 
         self.update_entries()
@@ -100,7 +171,7 @@ class thread_helper:
         value = self.chamfer_size_user_entry.get ()
         try:
             float_value = float (value)
-            if float_value > .05:
+            if float_value > .02:
                 self.chamfer_size_user_entry.config (bg="pink")
             elif float_value < 0.:
                 self.chamfer_size_user_entry.config (bg="pink")
@@ -144,234 +215,277 @@ class thread_helper:
         self.feed_entry.insert (0, thread_data["pitch"])
         self.feed_entry.config (state='readonly')
 
+
+        index = self.thread_types.index(self.selected_thread_type.get())
+
+        for key, value in thread_data['drill'][index].items ():
+            size = value[0]['size']
+            number = value[0]['number']
+            break
+
         self.drill_number_entry.config (state='normal')
         self.drill_number_entry.delete (0, tk.END)
-        self.drill_number_entry.insert (0, thread_data['drill'][0]["standard"][0]["number"])
+        self.drill_number_entry.insert (0, number)
         self.drill_number_entry.config (state='readonly')
 
         self.drill_size_entry.config (state='normal')
         self.drill_size_entry.delete (0, tk.END)
-        self.drill_size_entry.insert (0, thread_data['drill'][0]["standard"][0]["size"])
+        self.drill_size_entry.insert (0, size)
         self.drill_size_entry.config (state='readonly')
+
 
         self.update_chamfer ()
 
-class formulas:
+    def __reset_tap_type_menu(self, *args):
+        thread_data = next (thread for thread in self.data["standard threads"] if thread["name"] == self.selected_thread.get ())
+        # reset OptionMenu
+        self.thread_types.clear()
+        self.thread_types = [list (d.keys ())[0] for d in thread_data['drill']]
+        self.selected_thread_type.set(self.thread_types[0])
+        self.thread_menu_type.destroy()
+        self.thread_menu_type = tk.OptionMenu (self.option_frame, self.selected_thread_type, *self.thread_types)
+        self.thread_menu_type.config(font=(None, 14))
+        self.thread_menu_type['menu'].config (font=('Courier', 14))
+        self.thread_menu_type.grid(padx=10, row=0, column=1)
+        self.update_entries()
 
-    FORMULAS = ['SFM', 'RPM', 'IPM', "FEED", 'MRR']
+class formulas(AppWindow):
+
+    QUESTIONS = []
+    ANSWER = None
+    CURRENT_FORMULA = None
 
     def __init__(self, root):
-        BACKGROUND = 'gray'
-        x, y = root.winfo_x(), root.winfo_y()
-        root = tk.Toplevel(root)
-        root.title ("Formulas")
-        root.config (bg=BACKGROUND)
-        root.geometry (f"660x425+{x}+{y}")
-        root.iconphoto (True, PhotoImage (file=ICON))
+        super ().__init__ (root, title="Formulas")
 
+        # load formula data
+        # load file names & state form json file
+        with open (FILENAME, "r") as f:
+            self.data = json.load (f)
+        # Extract all the thread names
+        self.FORMULAS = [formula for formula in self.data["formulas"]]
 
         # Create a StringVar to hold the selected formula
-        self.selected_formula = tk.StringVar (root)
-        self.selected_formula.set (self.FORMULAS[0])
+        self.selected_formula = tk.StringVar (self.TOP_LEVEL)
+        self.selected_formula.set (self.FORMULAS[0]["name"])
+
+        print(self.FORMULAS[0]["questions"])
 
         # Create an OptionMenu of formulas
-        formula_label = tk.Label (root, text="Select Formula:", bg=BACKGROUND, font=("Courier", 16))
+        formula_label = tk.Label (self.TOP_LEVEL, text="Select Formula:", bg=BACKGROUND, font=("Courier", 16))
         formula_label.pack (anchor="n")
-        self.thread_menu = tk.OptionMenu (root, self.selected_formula, *self.FORMULAS)
+        self.thread_menu = tk.OptionMenu (self.TOP_LEVEL, self.selected_formula, *[name["name"] for name in self.FORMULAS])
         self.thread_menu.config(font=(None, 15))
         self.thread_menu['menu'].config (font=('Courier', 15))
         self.thread_menu.pack (anchor="n")
 
         # Create a new LabelFrame
-        frame = LabelFrame (root, text="", bg=BACKGROUND, font=(None, 18))
-        frame.pack(padx=10, pady=10)
+        self.question_frame = LabelFrame (self.TOP_LEVEL, text="", bg=BACKGROUND, font=(None, 18))
+        self.question_frame.pack (padx=10, pady=10)
 
-        # Create font for the Labals and Entry
-        font = (None, 15)
-        # Create 3 Entry widgets and add them to the LabelFrame
-        self.entry_labal_1 = Label(frame, text='first', bg=BACKGROUND, font=font)
-        self.entry_labal_1.grid(pady=5, row=0, column=0)
-        self.entry1 = Entry (frame, font=font)
-        self.entry1.grid (padx=5, pady=5, row=0, column=1)
 
-        # Create Label and Entry 2
-        self.entry_labal_2 = Label(frame, text='second', bg=BACKGROUND, font=font)
-        self.entry_labal_2.grid(pady=5, row=1, column=0)
-        self.entry2 = Entry (frame, font=font)
-        self.entry2.grid (padx=5, pady=5, row=1, column=1)
-
-        # Create Label and Entry 3
-        self.entry_labal_3 = Label(frame, text='third', bg=BACKGROUND, font=font)
-        self.entry_labal_3.grid(pady=5, row=2, column=0)
-        self.entry3 = Entry (frame, font=font)
-        self.entry3.grid (padx=5, pady=5, row=2, column=1)
-
-        # Create Label and Entry for the Answer
-        self.entry_labal_answer = Label(frame, text='answer', bg=BACKGROUND, font=font)
-        self.entry_labal_answer.grid(pady=5, row=3, column=0)
-        self.answer_entry = Entry (frame, font=font)
-        self.answer_entry.grid (padx=5, pady=5, row=3, column=1)
 
         # Create a trace to keep track of the option selected
-        self.selected_formula.trace ("w", self.__fill_in_gui)
-        self.entry1.bind ("<FocusOut>", self.__solve_equaiton)
-        self.entry2.bind ("<FocusOut>", self.__solve_equaiton)
-        self.entry3.bind ("<FocusOut>", self.__solve_equaiton)
-        self.__fill_in_gui()
+        self.selected_formula.trace ("w", self.__fill_in_questions)
 
-        # create a section where we can get reference numbers from internet sites
-        # Create a new LabelFrame
-        ref_frame = LabelFrame (root, text="Reference Sites", bg=BACKGROUND, font=(None, 18))
-        ref_frame.pack (padx=10, pady=10)
+        self.__fill_in_questions ()
 
-        # Link to CNC Lathing SFM site
-        cnc_lathing_button = Button(ref_frame, text="CNC Lathing", command=lambda :webbrowser.open_new("https://www.cnclathing.com/guide/cutting-speed-chart-for-different-materials-in-turning-drilling-and-more-cnc-machining-processes-cnclathing"))
-        cnc_lathing_button.grid(padx=5, pady=5, column=0, row=0)
-
-        # Link to suncoasttools SFM page
-        sun_coast_tools_button = Button(ref_frame, text="Sun Coast Tools", command=lambda :webbrowser.open_new("https://www.suncoasttools.com/PDFFILES/WhitneyTool/Catalog/35.pdf"))
-        sun_coast_tools_button.grid(padx=5, pady=5, column=1, row=0)
-
-        # Link to Little Machine Shop SFM page
-        little_machine_shop_button = Button(ref_frame, text="Little Machine Shop", command=lambda :webbrowser.open_new("https://littlemachineshop.com/reference/cuttingspeeds.php"))
-        little_machine_shop_button.grid(padx=5, pady=5, column=2, row=0)
-
-        # programmed label
-        Label(root, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
+    def __fill_in_questions(self, *args):
+        for f in self.FORMULAS:
+            if self.selected_formula.get() == f["name"]:
+                self.CURRENT_FORMULA = f
+                break
+        self.__create_answer ()
+        self.__set_answer ()
 
 
-    def __fill_in_gui(self, *args):
-        formula = self.selected_formula.get()
-        self.__reset_entries()
+        # clear existing variables
+        for ques in self.QUESTIONS:
+            ques['lbl'].destroy()
+            ques["entry"].destroy()
+        self.QUESTIONS.clear()
 
-        # SFM
-        if formula == self.FORMULAS[0]:
-            self.entry_labal_1.config(text='Enter Tool Ø: ')
-            self.entry_labal_2.config(text='Enter RPM: ')
-            self.entry_labal_answer.config(text="SFM: ")
-            self.answer_entry.config (state='normal')
-            self.answer_entry.delete (0, tk.END)
-            self.answer_entry.insert (0, '')
-            self.answer_entry.config (state='readonly')
-            self.entry3.grid_remove()
-            self.entry_labal_3.grid_remove()
+        idx = 0
+        for index, i in enumerate(self.CURRENT_FORMULA["questions"]):
+            ques = self.__create_question(i)
+            ques["lbl"].grid (pady=5, row=idx, column=0)
+            ques["entry"].grid (pady=5, row=idx, column=1)
+            self.QUESTIONS.append(ques)
+            idx+= 1
 
-        # RPM
-        if formula == self.FORMULAS[1]:
-            self.entry_labal_1.config(text='Enter SFM: ')
-            self.entry_labal_2.config(text='Enter Ø: ')
-            self.entry_labal_answer.config(text="RPM: ")
-            self.answer_entry.config (state='normal')
-            self.answer_entry.delete (0, tk.END)
-            self.answer_entry.insert (0, '')
-            self.answer_entry.config (state='readonly')
-            self.entry3.grid_remove()
-            self.entry_labal_3.grid_remove()
-
-        # IPM
-        if formula == self.FORMULAS[2]:
-            self.entry_labal_1.config(text='Chip load per tooth: ')
-            self.entry_labal_2.config(text='Number of Teeth: ')
-            self.entry3.grid()
-            self.entry_labal_3.grid()
-            self.entry_labal_3.config(text='RPM: ')
-            self.entry_labal_answer.config(text="IPM: ")
-            self.answer_entry.config (state='normal')
-            self.answer_entry.delete (0, tk.END)
-            self.answer_entry.insert (0, '')
-            self.answer_entry.config (state='readonly')
-
-        # feed
-        if formula == self.FORMULAS[3]:
-            self.entry_labal_1.config(text='Enter RPM: ')
-            self.entry_labal_2.config(text='Number of Teeth: ')
-            self.entry3.grid()
-            self.entry_labal_3.grid()
-            self.entry_labal_3.config(text='Feed Per Tooth: ')
-            self.entry_labal_answer.config(text="Feed: ")
-            self.answer_entry.config (state='normal')
-            self.answer_entry.delete (0, tk.END)
-            self.answer_entry.insert (0, '')
-            self.answer_entry.config (state='readonly')
-
-        # mrr
-        if formula == self.FORMULAS[4]:
-            self.entry_labal_1.config(text='Enter ADOC: ')
-            self.entry_labal_2.config(text='Enter RDOC: ')
-            self.entry3.grid()
-            self.entry_labal_3.grid()
-            self.entry_labal_3.config(text='Feed: ')
-            self.entry_labal_answer.config(text="MRR: ")
-            self.answer_entry.config (state='normal')
-            self.answer_entry.delete (0, tk.END)
-            self.answer_entry.insert (0, '')
-            self.answer_entry.config (state='readonly')
-
-    def __solve_equaiton(self, args=''):
-        formula = self.selected_formula.get()
-        solution = ''
-        try:
-            entry1 = float(eval(self.entry1.get()))
-            entry2 = float (eval(self.entry2.get ()))
-            if formula == self.FORMULAS[2] or formula == self.FORMULAS[3] or formula == self.FORMULAS[4]:
-                entry3 = float(eval(self.entry3.get()))
-        except:
-            # set answer entry to the solutioin
-            self.answer_entry.config (state='normal')
-            self.answer_entry.delete (0, tk.END)
-            self.answer_entry.insert (0, "")
-            self.answer_entry.config (state='readonly')
-            return
-
-        # SFM
-        if formula == self.FORMULAS[0]:
-            solution = f'{round (.262 * entry1 * entry2, 4):,}'
-
-        # RPM
-        if formula == self.FORMULAS[1]:
-            solution = f'{round(3.82 * entry1 / entry2)}.'
-
-        # IPM
-        if formula == self.FORMULAS[2]:
-            solution = f'{round(entry1 * entry2 * entry3, 3)}'
-
-        # FEED
-        if formula == self.FORMULAS[3]:
-            solution = f'{round(entry1 * entry2 * entry3, 3)}'
-
-        # MRR
-        if formula == self.FORMULAS[4]:
-            solution = f'{round(entry1 * entry2 * entry3, 3)}'
-
-
-        # set answer entry to the solutioin
-        self.answer_entry.config (state='normal')
-        self.answer_entry.delete (0, tk.END)
-        self.answer_entry.insert (0, solution)
-        self.answer_entry.config (state='readonly')
+        self.ANSWER["lbl"].grid (pady=5, row=idx, column=0)
+        self.ANSWER["entry"].grid (pady=5, row=idx, column=1)
 
     def __reset_entries(self):
-        self.entry1.delete(0, tk.END)
+        self.entry1.delete (0, tk.END)
         self.entry1.insert (0, '')
-        self.entry2.delete(0, tk.END)
+        self.entry2.delete (0, tk.END)
         self.entry2.insert (0, '')
+        self.entry3.delete (0, tk.END)
+        self.entry3.insert (0, '')
         self.answer_entry.config (state='normal')
         self.answer_entry.delete (0, tk.END)
         self.answer_entry.insert (0, '')
         self.answer_entry.config (state='readonly')
 
+    def __create_question(self, name):
+        label = Label (self.question_frame, text=name+":", bg=BACKGROUND, font=(None, 15))
+        entry = Entry (self.question_frame, font=(None, 15))
+        entry.bind ("<FocusOut>", self.__solve_equaiton)
+        return {"lbl":label, "entry":entry}
+
+    def __create_answer(self):
+        # Create Label and Entry for the Answer
+        if self.ANSWER != None:
+            self.ANSWER["lbl"].destroy()
+            self.ANSWER["entry"].destroy()
+        answer_label = Label (self.question_frame, text='answer', bg=BACKGROUND, font=(None, 15))
+        answer_entry = Entry (self.question_frame, font=(None, 15))
+        self.ANSWER = {'lbl':answer_label, "entry":answer_entry}
+
+    def __solve_equaiton(self, args=''):
+        solution = ''
+        entry_data = []
+        formula = None
+        try:
+            for q in self.QUESTIONS:
+                entry_data.append(float(eval(q["entry"].get())))
+            formula = self.CURRENT_FORMULA["formula"]
+
+        except:
+            self.__set_answer()
+            return
+
+        for i in range(len(self.CURRENT_FORMULA['questions'])):
+            formula = formula.replace(f"[{i}]", str(entry_data[i]))
+
+        print (f"Entry: {entry_data} | {formula}")
+        solution = round(eval(formula), 4)
+
+        # set answer entry to the solutioin
+        self.__set_answer(solution)
+
+    def __set_answer(self, answer=""):
+        # set answer entry to the solutioin
+        if self.CURRENT_FORMULA != None:
+            self.ANSWER['lbl'].config(text=self.CURRENT_FORMULA['name'] + ":")
+        self.ANSWER['entry'].config (state='normal')
+        self.ANSWER['entry'].delete (0, tk.END)
+        self.ANSWER['entry'].insert (0, answer)
+        self.ANSWER['entry'].config (state='readonly')
+
+class folder(AppWindow):
+
+    FILE_PATH = ""
+
+    def __init__(self, root):
+        super ().__init__ (root, title="Folder Creator")
+
+        # Create frame to hold labels
+        label_frame = Frame (self.TOP_LEVEL, bg=BACKGROUND)
+        label_frame.pack(padx=5, pady=5)
+
+        # create label to show current path
+        file_path_label = Label (label_frame, text="File:", bg=BACKGROUND, font=(None, 12))
+        file_path_label.grid(padx=5, pady=5, row=0, column=0)
+
+        # create entry widget for file path
+        self.file_path_entry = tk.Entry(label_frame, state="readonly", font=(None, 12), width=50)
+        self.file_path_entry.grid(padx=5, pady=5, row=0, column=1, columnspan=3)
+
+        # load file names & state form json file
+        with open (FILENAME, "r") as f:
+            self.data = json.load (f)
+        # Extract all the thread names
+        self.folder_names = [{**folder, "var": tk.IntVar (self.TOP_LEVEL, value=folder["state"])} for folder in self.data["folders"]]
+
+        # sort the list by the name
+        self.folder_names.sort(key=lambda x: x["name"])
+
+        # Create Checkbox Frame
+        checkbox_frame = Frame (self.TOP_LEVEL, bg=BACKGROUND)
+        checkbox_frame.pack(padx=5, pady=5)
+
+        location = {"row":0, "column":0}
+        for i, checkbox in enumerate (self.folder_names):
+            cb = tk.Checkbutton (
+                checkbox_frame,
+                text=checkbox["name"],
+                variable=checkbox["var"],
+                bg=BACKGROUND,
+                font=(None, 12)
+            )
+            if i%3 == 0:
+                location["row"]+=1
+                location["column"]=0
+            else:
+                location["column"]+=1
+            cb.grid (padx=5, pady=5, row=location["row"], column=location["column"])
+
+        # setup buttons
+        button_frame = Frame (self.TOP_LEVEL, bg=BACKGROUND)
+        button_frame.pack ()
+
+        toggle_btn = Button (button_frame, text="Toggle All", command=self.__toggle_all, font=(None, 12))
+        toggle_btn.grid (padx=5, pady=5, row=0, column=0)
+
+        browse_btn = Button (button_frame, text="Browse", command=self.__save_file_path, font=(None, 12))
+        browse_btn.grid (padx=5, pady=5, row=0, column=1)
+
+        create_btn = Button (button_frame, text="Create", command=self.__create_folders, font=(None, 12))
+        create_btn.grid (padx=5, pady=5, row=0, column=2)
+
+    def __save_file_path(self):
+        self.FILE_PATH = filedialog.askdirectory ()
+        self.__alter_entry_text (text=self.FILE_PATH)
+
+    def __create_folders(self):
+        if not os.path.isdir (self.FILE_PATH):
+            # File path is not valid
+            print ("Invalid file path:", self.FILE_PATH)
+            self.__alter_entry_text()
+            return
+
+        for folder in self.folder_names:
+            if folder["var"].get() == 1:
+                new_folder = os.path.join(self.FILE_PATH, folder["name"])
+                if not os.path.exists (new_folder):
+                    os.makedirs (new_folder)
+
+        #self.__alter_entry_text(text="Folders Created.")
+        #self.FILE_PATH = ""
+
+    def __toggle_all(self):
+        state = self.folder_names[0]["var"].get()
+        for folder in self.folder_names:
+            if state == 0:
+                folder["var"].set(1)
+            else:
+                folder["var"].set (0)
+
+    def __alter_entry_text(self, text=None):
+        self.file_path_entry.config (state="normal")
+        self.file_path_entry.delete(0, END)
+        if text != None:
+            self.file_path_entry.insert (0, text)
+        else:
+            self.file_path_entry.insert (0, "Invalid File Path.")
+        self.file_path_entry.config (state="readonly")
+
 class main:
 
     def __init__(self):
         # Create a new Tkinter window
-        BACKGROUND = "GRAY"
         self.root = tk.Tk ()
-        self.root.title ("Machinist Cheat Sheet")
+        self.root.title (PROGRAM_TITLE)
         self.root.config (bg=BACKGROUND)
         self.root.geometry ("660x425")
         self.root.iconphoto(True, PhotoImage(file=ICON))
+        self.root.resizable(width=False, height=False)
+
+
         # Create the label at the top of the menu
-        Label(self.root, text="Machinist Cheat Sheet", font=(None, 20), bg=BACKGROUND).pack(padx=5, pady=5)
+        lbl = Label(self.root, text="Machinist Cheat Sheet", font=(None, 20), bg=BACKGROUND).pack(padx=5, pady=5)
         button_font=(None, 16)
 
         # Create a button that opens the Thread Helper
@@ -386,22 +500,65 @@ class main:
         formulas_button = tk.Button (self.root, text="CNC Codes", command=lambda :code_storage(self.root), font=button_font)
         formulas_button.pack (padx=5, pady=5)
 
+        # Create a button that opens the Tap Drill Chart
+        formulas_button = tk.Button (self.root, text="Tap Drill Chart", command=lambda :webbrowser.open_new('https://www.lincolnmachine.com/tap_drill_chart.html'), font=button_font)
+        formulas_button.pack (padx=5, pady=5)
+
+        # Create a button that opens the Tap Drill Chart
+        formulas_button = tk.Button (self.root, text="Folder Creator", command=lambda :folder(self.root), font=button_font)
+        formulas_button.pack (padx=5, pady=5)
+
         # programmed label
         Label(self.root, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
 
         # Tkinter main loop
         self.root.mainloop()
 
-class code_storage:
+
+class code_storage(AppWindow):
+
+    FILE_PATH = ""
+    MACHINE_DATA = []
 
     def __init__(self, root):
-        BACKGROUND = 'gray'
+        super ().__init__ (root, title="CNC Code Storage")
+
+        # load data from json file
+        with open (FILENAME, "r") as f:
+            self.data = json.load (f)
+
+        # Extract all the thread names
+        self.MACHINE_DATA = [machine for machine in self.data["machine"]]
+        self.MACHINE_DATA.sort(key=lambda x:x['name'])
+
+        # Create a StringVar to hold the selected machine
+        self.selected_machine = tk.StringVar (self.TOP_LEVEL)
+        self.selected_machine.set (self.MACHINE_DATA[0]['name'])
+
+        # Create an OptionMenu of thread names
+        machine_label = tk.Label (self.TOP_LEVEL, text="Machine:", bg=BACKGROUND)
+        machine_label.config (font=("Courier", 16))
+        machine_label.pack (anchor="n")
+        self.thread_menu = tk.OptionMenu (self.TOP_LEVEL, self.selected_machine, *[machine['name'] for machine in self.MACHINE_DATA])
+        self.thread_menu.config(font=(None, 15))
+        self.thread_menu['menu'].config (font=('Courier', 15))
+        self.thread_menu.pack (anchor="n")
+
+
+
+
+
+class code_storage_one:
+
+    def __init__(self, root):
         x, y = root.winfo_x (), root.winfo_y ()
         root = tk.Toplevel (root)
         root.title ("CNC Code Helper")
         root.config (bg=BACKGROUND)
         root.geometry (f"660x425+{x}+{y}")
         root.iconphoto (True, PhotoImage (file=ICON))
+        root.resizable(width=False, height=False)
+
         with open (FILENAME, "r") as f:
             self.data = json.load (f)
         # Extract all the thread names
@@ -489,251 +646,23 @@ class code_storage:
         for index, (val, k) in enumerate (l):
             self.tree.move (k, '', index)
 
-def setup_file():
-    os.makedirs(DIR)
-    ROUND_NUMBER = 5
-    data = {
-        "standard threads": [
-            {
-                "name": "0-80",
-                "class": "2B",
-                "minor": ".0465-.0514",
-                "major": .060,
-                "pitch": round(1/80, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                             [
-                                 {"size":.0469,
-                                  "number":"3/64"}
-                            ]
-                        },
-                        {"roll form":
-                            [
-                                {"size": .055,
-                                 "number": "#55"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "2-56",
-                "class": "2B",
-                "minor": ".0667-.0737",
-                "major": .086,
-                "pitch": round(1 / 56, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                             [
-                                 {"size":.070,
-                                  "number":"#50"}
-                            ]
-                        },
-                        {"roll form":
-                            [
-                                {"size": .0781,
-                                 "number": "5/64"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "4-40",
-                "class": "2B",
-                "minor": ".0849-.0939",
-                "major": .112,
-                "pitch": round (1 / 40, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .089,
-                                 "number": "#43"}
-                            ]
-                        },
-                        {"roll form":
-                            [
-                                {"size": .0995,
-                                 "number": "#39"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "6-32",
-                "class": "2B",
-                "minor": ".104-.114",
-                "major": .138,
-                "pitch": round (1 / 32, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .1065,
-                                 "number": "#36"}
-                            ]
-                        },
-                        {"roll form":
-                            [
-                                {"size": .125,
-                                 "number": "1/8"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "8-32",
-                "class": "2B",
-                "minor": ".130-.139",
-                "major": .164,
-                "pitch": round (1 / 32, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .136,
-                                 "number": "#29"}
-                            ]
-                        },
-                        {"roll form":
-                            [
-                                {"size": .1495,
-                                 "number": "#25"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "10-32",
-                "class": "2B",
-                "minor": ".156-.164",
-                "major": .190,
-                "pitch": round (1 / 32, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .159,
-                                 "number": "#21"}
-                            ]
-                        },
-                        {"roll form":
-                            [
-                                {"size": .173,
-                                 "number": "#17"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "1/4-20",
-                "class": "2B",
-                "minor": ".196-.207",
-                "major": .250,
-                "pitch": round (1 / 20, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .201,
-                                 "number": "#7"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "5/16-18",
-                "class": "2B",
-                "minor": ".252-.265",
-                "major": .3125,
-                "pitch": round (1 / 18, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .257,
-                                 "number": "LTR F"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "5/16-24",
-                "class": "2B",
-                "minor": ".267-.277",
-                "major": .3125,
-                "pitch": round (1 / 24, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .272,
-                                 "number": "LTR I"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "3/8-16",
-                "class": "2B",
-                "minor": ".307-.321",
-                "major": .375,
-                "pitch": round (1 / 16, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .3125,
-                                 "number": "5/16"}
-                            ]
-                        }
-                    ]
-            },
-            {
-                "name": "3/8-24",
-                "class": "2B",
-                "minor": ".330-.340",
-                "major": .375,
-                "pitch": round (1 / 24, ROUND_NUMBER),
-                "drill":
-                    [
-                        {"standard":
-                            [
-                                {"size": .332,
-                                 "number": "LTR Q"}
-                            ]
-                        }
-                    ]
-            }
-        ],
-        "machine":
-        [
-            {'name': 'Feeler',
-             'data':
-             [
-                 {'code': 'M07',
-                  'description': 'FLR 1 & FLR 2 Air Blast'},
-                 {'code': 'M27',
-                  'description': 'FLR 3 Air Blast'}
-             ]
-            },
-            {'name': 'Big Scotty',
-             'data':
-                 [
-                     {'code': 'G130',
-                      'description':'Cancel Contour Control'},
-                     {'code': 'G131',
-                      'description': 'Contour Control, Range 1=Low, 10=Highest'}
-                 ]
-             }
-        ]
-    }
-    with open (FILENAME, 'w') as f:
-        json.dump (data, f)
+
+def check_folders():
+    if not os.path.exists(DIR):
+        os.makedirs(DIR)
+    # download json file
+    if not os.path.exists(FILENAME):
+        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/machinistcheetsheet.json"
+        response = requests.get (url)
+        with open (FILENAME, "wb") as file:
+            file.write (response.content)
+    # download icon if doesnt exist
+    if not os.path.exists(ICON):
+        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/icon.png"
+        response = requests.get (url)
+        with open (ICON, "wb") as file:
+            file.write (response.content)
 
 if __name__ == '__main__':
-    # if file does not exist, create the file
-    if not os.path.exists(FILENAME):
-        setup_file ()
+    check_folders()
     main()
