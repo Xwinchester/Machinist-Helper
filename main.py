@@ -22,6 +22,13 @@ version 1.2 Revision:
     - Added a Folder Creator to Create generic folders that Corning uses.
 version 1.3 Revision:
     - Revised formulas and folder creator to start from AppWindow and read everything from json file
+
+***** IDEAS *****
+TODO: Added a html page to the site to reference to for the tap drill data. and have it download it like the icon, then the tap drill chart
+        will open this page up
+TODO: Reprogram the thread helper with the AppWindow class and organize the data
+TODO: Format numbers in the formulas to have commas: 15000 = 15,000
+*****
 """
 
 VERSION = "1.3.828"
@@ -521,7 +528,7 @@ class code_storage(AppWindow):
     MACHINE_DATA = []
 
     def __init__(self, root):
-        super ().__init__ (root, title="CNC Code Storage")
+        super ().__init__ (root, title="Machine Code Database")
 
         # load data from json file
         with open (FILENAME, "r") as f:
@@ -544,43 +551,9 @@ class code_storage(AppWindow):
         self.thread_menu['menu'].config (font=('Courier', 15))
         self.thread_menu.pack (anchor="n")
 
-
-
-
-
-class code_storage_one:
-
-    def __init__(self, root):
-        x, y = root.winfo_x (), root.winfo_y ()
-        root = tk.Toplevel (root)
-        root.title ("CNC Code Helper")
-        root.config (bg=BACKGROUND)
-        root.geometry (f"660x425+{x}+{y}")
-        root.iconphoto (True, PhotoImage (file=ICON))
-        root.resizable(width=False, height=False)
-
-        with open (FILENAME, "r") as f:
-            self.data = json.load (f)
-        # Extract all the thread names
-        machines = [machine["name"] for machine in self.data["machine"]]
-        machines.sort()
-        # Create a StringVar to hold the selected machine
-        self.selected_machine = tk.StringVar (root)
-        self.selected_machine.set (machines[0])
-
-        # Create an OptionMenu of thread names
-        machine_label = tk.Label (root, text="Machine:", bg=BACKGROUND)
-        machine_label.config (font=("Courier", 16))
-        machine_label.pack (anchor="n")
-        self.thread_menu = tk.OptionMenu (root, self.selected_machine, *machines)
-        self.thread_menu.config(font=(None, 15))
-        self.thread_menu['menu'].config (font=('Courier', 15))
-        self.thread_menu.pack (anchor="n")
-
-
         # Create an object of Style widget
         try:
-            self.style = ttk.Style (root)
+            self.style = ttk.Style (self.TOP_LEVEL)
             aktualTheme = self.style.theme_use ()
             self.style.theme_create ("dummy", parent=aktualTheme)
             self.style.theme_use ("dummy")
@@ -590,7 +563,7 @@ class code_storage_one:
             pass
 
         # create treeview
-        self.tree = ttk.Treeview(root, columns=("code", "description"))
+        self.tree = ttk.Treeview(self.TOP_LEVEL, columns=("code", "description"))
 
         self.tree.heading('code', text="Code")
         self.tree.heading('description', text='Description')
@@ -616,9 +589,6 @@ class code_storage_one:
 
         self.__load_data()
 
-        # programmed label
-        Label(root, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
-
         self.selected_machine.trace ("w", self.__load_data)
 
     def __load_data(self, *args):
@@ -629,7 +599,7 @@ class code_storage_one:
         self.treeview_sort_column("code", False)
 
         # Define the tag for even rows
-        self.tree.tag_configure ("even", background="light gray")
+        self.tree.tag_configure ("even", background="gray")
         self.tree.tag_configure ("odd", background="white")
 
         # Apply the tag to the appropriate rows
