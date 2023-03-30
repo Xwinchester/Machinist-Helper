@@ -8,7 +8,8 @@
       "pitch": 0.0125,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.0469,
               "number": "3/64"
@@ -16,7 +17,8 @@
           ]
         },
         {
-          "Roll Form": [
+          "type": "Roll Form",
+          "data": [
             {
               "size": 0.055,
               "number": "#55"
@@ -33,7 +35,8 @@
       "pitch": 0.01786,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.07,
               "number": "#50"
@@ -41,7 +44,8 @@
           ]
         },
         {
-          "Roll Form": [
+          "type": "Roll Form",
+          "data": [
             {
               "size": 0.0781,
               "number": "5/64"
@@ -58,7 +62,8 @@
       "pitch": 0.01786,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.09375,
               "number": "3/32"
@@ -66,7 +71,8 @@
           ]
         },
         {
-          "Roll Form": [
+          "type": "Roll Form",
+          "data": [
             {
               "size": 0.0,
               "number": "N/A"
@@ -83,7 +89,8 @@
       "pitch": 0.025,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.089,
               "number": "#43"
@@ -91,7 +98,8 @@
           ]
         },
         {
-          "Roll Form": [
+          "type": "Roll Form",
+          "data": [
             {
               "size": 0.0995,
               "number": "#39"
@@ -108,7 +116,8 @@
       "pitch": 0.03125,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.1065,
               "number": "#36"
@@ -116,7 +125,8 @@
           ]
         },
         {
-          "Roll Form": [
+          "type": "Roll Form",
+          "data": [
             {
               "size": 0.125,
               "number": "1/8"
@@ -133,7 +143,8 @@
       "pitch": 0.03125,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.136,
               "number": "#29"
@@ -141,7 +152,8 @@
           ]
         },
         {
-          "Roll Form": [
+          "type": "Roll Form",
+          "data": [
             {
               "size": 0.1495,
               "number": "#25"
@@ -158,7 +170,8 @@
       "pitch": 0.03125,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.159,
               "number": "#21"
@@ -166,7 +179,8 @@
           ]
         },
         {
-          "Roll Form": [
+          "type": "Roll Form",
+          "data": [
             {
               "size": 0.173,
               "number": "#17"
@@ -183,7 +197,8 @@
       "pitch": 0.05,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.201,
               "number": "#7"
@@ -200,7 +215,8 @@
       "pitch": 0.05556,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.257,
               "number": "LTR F"
@@ -217,7 +233,8 @@
       "pitch": 0.04167,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.272,
               "number": "LTR I"
@@ -234,7 +251,8 @@
       "pitch": 0.0625,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.3125,
               "number": "5/16"
@@ -251,7 +269,8 @@
       "pitch": 0.04167,
       "drill": [
         {
-          "Cutting": [
+          "type": "Cutting",
+          "data": [
             {
               "size": 0.332,
               "number": "LTR Q"
