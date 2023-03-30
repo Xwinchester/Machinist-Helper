@@ -5,6 +5,6 @@ Currently setup to store the following:
 - Specialized codes for certain machines. 
 - Standard formulas that machinists need.
 - Mass create folders in selected file path.
-- Reference to a drill chart.
+- Reference to a drill chart made in HTML & CSS
 
 All data is stored in a json file.
