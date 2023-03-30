@@ -23,7 +23,7 @@ version 1.1 Revisions:
 version 1.2 Revision:
     - Added a Folder Creator to Create generic folders that Corning uses.
 version 1.3 Revision:
-    - Revised formulas and folder creator to start from AppWindow and read everything from json file
+    - Revised all classes to start from AppWindow and read everything from json file
 
 ***** IDEAS *****
 TODO: Format numbers in the formulas to have commas: 15000 = 15,000
@@ -50,6 +50,8 @@ class AppWindow:
         # Set the window title
         if title != None:
             self.TOP_LEVEL.title(PROGRAM_TITLE + " - " + title)
+        else:
+            self.TOP_LEVEL.title(PROGRAM_TITLE)            
 
         # Set the window background color
         self.TOP_LEVEL.config(bg=BACKGROUND)
@@ -510,7 +512,7 @@ class main:
         formulas_button.pack (padx=5, pady=5)
 
         # Create a button that opens the Tap Drill Chart
-        formulas_button = tk.Button (self.root, text="Tap Drill Chart", command=lambda :webbrowser.open_new(DRILL_CHART), font=button_font)
+        formulas_button = tk.Button (self.root, text="Drill Chart", command=lambda :webbrowser.open_new(DRILL_CHART), font=button_font)
         formulas_button.pack (padx=5, pady=5)
 
         # Create a button that opens the Tap Drill Chart
