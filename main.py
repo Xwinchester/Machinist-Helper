@@ -9,6 +9,8 @@ DIR = os.path.join ('C:\\', 'Users', os.getlogin (), 'Machinist Cheat Sheet')
 BACKGROUND = '#345760'
 FILENAME = os.path.join(DIR,'machinistcheetsheet.json')
 ICON = os.path.join(DIR, 'icon.png')
+CSS = os.path.join(DIR, 'styles.css')
+DRILL_CHART = os.path.join(DIR, 'drill_chart.html')
 
 
 BACKGROUND_IMAGE = os.path.join(DIR, 'background.png')
@@ -24,14 +26,11 @@ version 1.3 Revision:
     - Revised formulas and folder creator to start from AppWindow and read everything from json file
 
 ***** IDEAS *****
-TODO: Added a html page to the site to reference to for the tap drill data. and have it download it like the icon, then the tap drill chart
-        will open this page up
-TODO: Reprogram the thread helper with the AppWindow class and organize the data
 TODO: Format numbers in the formulas to have commas: 15000 = 15,000
 *****
 """
 
-VERSION = "1.3.828"
+VERSION = "1.3.650"
 PROGRAMMED_TEXT = f"Powered by Winchester Automation Version {VERSION}"
 
 
@@ -72,57 +71,58 @@ class AppWindow:
         self.MAIN_ROOT.deiconify()
         self.TOP_LEVEL.destroy()
 
-class thread_helper:
+class thread_helper(AppWindow):
+
+    THREAD_DATA = []
+    SELECTED_THREAD = None
+    TAP_TYPE = None
+    CHAMFER_SIZE = None
+    TAP_OPTIONS = None
 
     def __init__(self, root):
-        x, y = root.winfo_x (), root.winfo_y ()
-        root = tk.Toplevel(root)
-        root.title ("Thread Helper")
-        root.config (bg=BACKGROUND)
-        root.geometry (f"660x425+{x}+{y}")
-        root.iconphoto (True, PhotoImage (file=ICON))
-        root.resizable(width=False, height=False)
+        super ().__init__ (root, title="Thread Helper")
 
+        # load thread data
+        # load file names & state form json file
         with open (FILENAME, "r") as f:
             self.data = json.load (f)
         # Extract all the thread names
-        thread_names = [thread_data["name"] for thread_data in self.data["standard threads"]]
-        #thread_names.sort()
+        self.THREAD_DATA = [threads for threads in self.data["threads"]]
 
-        # Create a StringVar to hold the selected thread name
-        self.selected_thread = tk.StringVar (root)
-        self.selected_thread.set (thread_names[0])
+        # setup string var for drop down
+        self.SELECTED_THREAD = StringVar(self.TOP_LEVEL)
+        self.SELECTED_THREAD.set(self.THREAD_DATA[0]['name'])
 
         # Create a StringVar to hold the selected thread type
-        self.selected_thread_type = tk.StringVar (root)
-        self.thread_types = ['Cutting', 'Roll Form']
-        self.selected_thread_type.set (self.thread_types[0])
+        self.TAP_TYPE = tk.StringVar (self.TOP_LEVEL)
+        self.TAP_TYPE.set (self.THREAD_DATA[0]['drill'][0]['type'])
 
+        # Create a IntVar to hold the chamfer size
+        self.CHAMFER_SIZE = tk.IntVar (self.TOP_LEVEL)
+        self.CHAMFER_SIZE.set (.01)
 
-        # Create a StringVar to hold the chamfer size
-        self.selected_chamfer = tk.IntVar (root)
-        self.selected_chamfer.set (.01)
-
-        # create label
-        thread_label = tk.Label (root, text="Select Thread:", bg=BACKGROUND, font=("Courier", 16))
+        # create thread label
+        thread_label = tk.Label (self.TOP_LEVEL, text="Select Thread:", bg=BACKGROUND, font=("Courier", 16))
         thread_label.pack (anchor="n")
 
-
         # Create an OptionMenu of thread names
-        self.option_frame = Frame(root, bg=BACKGROUND)
+        self.option_frame = Frame(self.TOP_LEVEL, bg=BACKGROUND)
         self.option_frame.pack(padx=10, pady=10)
-        self.thread_menu = tk.OptionMenu (self.option_frame, self.selected_thread, *thread_names)
+        self.thread_menu = tk.OptionMenu (self.option_frame, self.SELECTED_THREAD, *[thread_name['name'] for thread_name in self.THREAD_DATA])
         self.thread_menu.config(font=(None, 14))
         self.thread_menu['menu'].config (font=('Courier', 14))
         self.thread_menu.grid(padx=10,row=0, column=0)
 
-        self.thread_menu_type = tk.OptionMenu (self.option_frame, self.selected_thread_type, *self.thread_types)
+
+        self.TAP_OPTIONS = [tap['type'] for tap in self.THREAD_DATA[0]['drill']]
+
+        self.thread_menu_type = tk.OptionMenu (self.option_frame, self.TAP_TYPE, *self.TAP_OPTIONS)
         self.thread_menu_type.config(font=(None, 14))
         self.thread_menu_type['menu'].config (font=('Courier', 14))
         self.thread_menu_type.grid(padx=10, row=0, column=1)
 
         # Create a labeled frame to hold the thread data
-        frame = tk.LabelFrame (root, text="Thread Data", padx=10, pady=10, font=(None, 22), bg=BACKGROUND)
+        frame = tk.LabelFrame (self.TOP_LEVEL, text="Thread Data", padx=10, pady=10, font=(None, 22), bg=BACKGROUND)
         frame.pack ()
         font = ('Courier', 16)
 
@@ -157,18 +157,15 @@ class thread_helper:
         self.drill_number_entry.grid (row=4, column=1)
         self.drill_size_entry = tk.Entry (frame, state='readonly', font=font, bg=BACKGROUND)
         self.drill_size_entry.grid (row=5, column=1)
-        self.chamfer_size_user_entry = tk.Entry (frame, textvariable=self.selected_chamfer, font=font)
+        self.chamfer_size_user_entry = tk.Entry (frame, textvariable=self.CHAMFER_SIZE, font=font)
         self.chamfer_size_user_entry.grid (row=6, column=1)
         self.chamfer_size_entry = tk.Entry (frame, state='readonly', font=font, bg=BACKGROUND)
         self.chamfer_size_entry.grid (row=7, column=1)
 
-        # programmed label
-        Label(root, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
-
         # Call the function to update the label when the selection changes
-        self.selected_thread.trace ("w", self.__reset_tap_type_menu)
-        self.selected_chamfer.trace ("w", self.update_chamfer)
-        self.selected_thread_type.trace('w', self.update_entries)
+        self.SELECTED_THREAD.trace ("w", self.__reset_tap_type_menu)
+        self.CHAMFER_SIZE.trace ("w", self.update_chamfer)
+        self.TAP_TYPE.trace('w', self.update_entries)
         self.chamfer_size_user_entry.bind ("<FocusOut>", self.check_chamfer_entry)
 
         self.update_entries()
@@ -201,7 +198,7 @@ class thread_helper:
         self.chamfer_size_entry.config (state='readonly')
 
     def update_entries(self, *args):
-        thread_data = next (thread for thread in self.data["standard threads"] if thread["name"] == self.selected_thread.get ())
+        thread_data = next (thread for thread in self.data["threads"] if thread["name"] == self.SELECTED_THREAD.get ())
         self.class_entry.config (state='normal')
         self.class_entry.delete (0, tk.END)
         self.class_entry.insert (0, thread_data["class"])
@@ -223,12 +220,11 @@ class thread_helper:
         self.feed_entry.config (state='readonly')
 
 
-        index = self.thread_types.index(self.selected_thread_type.get())
+        # get index
+        index = self.TAP_OPTIONS.index(self.TAP_TYPE.get())
 
-        for key, value in thread_data['drill'][index].items ():
-            size = value[0]['size']
-            number = value[0]['number']
-            break
+        size = thread_data['drill'][index]['data'][0]['size']
+        number = thread_data['drill'][index]['data'][0]['number']
 
         self.drill_number_entry.config (state='normal')
         self.drill_number_entry.delete (0, tk.END)
@@ -240,21 +236,21 @@ class thread_helper:
         self.drill_size_entry.insert (0, size)
         self.drill_size_entry.config (state='readonly')
 
-
         self.update_chamfer ()
 
     def __reset_tap_type_menu(self, *args):
-        thread_data = next (thread for thread in self.data["standard threads"] if thread["name"] == self.selected_thread.get ())
+        thread_data = next (thread['drill'] for thread in self.data["threads"] if thread["name"] == self.SELECTED_THREAD.get ())
         # reset OptionMenu
-        self.thread_types.clear()
-        self.thread_types = [list (d.keys ())[0] for d in thread_data['drill']]
-        self.selected_thread_type.set(self.thread_types[0])
+        self.TAP_OPTIONS.clear()
+        self.TAP_OPTIONS = [d['type'] for d in thread_data]
+        self.TAP_TYPE.set(self.TAP_OPTIONS[0])
         self.thread_menu_type.destroy()
-        self.thread_menu_type = tk.OptionMenu (self.option_frame, self.selected_thread_type, *self.thread_types)
+        self.thread_menu_type = tk.OptionMenu (self.option_frame, self.TAP_TYPE, *self.TAP_OPTIONS)
         self.thread_menu_type.config(font=(None, 14))
         self.thread_menu_type['menu'].config (font=('Courier', 14))
         self.thread_menu_type.grid(padx=10, row=0, column=1)
         self.update_entries()
+
 
 class formulas(AppWindow):
 
@@ -295,6 +291,7 @@ class formulas(AppWindow):
         # Create a trace to keep track of the option selected
         self.selected_formula.trace ("w", self.__fill_in_questions)
 
+
         self.__fill_in_questions ()
 
     def __fill_in_questions(self, *args):
@@ -323,23 +320,15 @@ class formulas(AppWindow):
         self.ANSWER["lbl"].grid (pady=5, row=idx, column=0)
         self.ANSWER["entry"].grid (pady=5, row=idx, column=1)
 
-    def __reset_entries(self):
-        self.entry1.delete (0, tk.END)
-        self.entry1.insert (0, '')
-        self.entry2.delete (0, tk.END)
-        self.entry2.insert (0, '')
-        self.entry3.delete (0, tk.END)
-        self.entry3.insert (0, '')
-        self.answer_entry.config (state='normal')
-        self.answer_entry.delete (0, tk.END)
-        self.answer_entry.insert (0, '')
-        self.answer_entry.config (state='readonly')
 
     def __create_question(self, name):
         label = Label (self.question_frame, text=name+":", bg=BACKGROUND, font=(None, 15))
-        entry = Entry (self.question_frame, font=(None, 15))
+        double_var = DoubleVar(self.TOP_LEVEL)
+        entry = Entry (self.question_frame, textvariable=double_var, font=(None, 15))
+
         entry.bind ("<FocusOut>", self.__solve_equaiton)
-        return {"lbl":label, "entry":entry}
+        #double_var.trace("w", self.__format_number)
+        return {"lbl":label, "entry":entry, 'var':double_var}
 
     def __create_answer(self):
         # Create Label and Entry for the Answer
@@ -376,10 +365,23 @@ class formulas(AppWindow):
         # set answer entry to the solutioin
         if self.CURRENT_FORMULA != None:
             self.ANSWER['lbl'].config(text=self.CURRENT_FORMULA['name'] + ":")
+        try:
+            answer = f"{answer:,}"
+        except:
+            pass
         self.ANSWER['entry'].config (state='normal')
         self.ANSWER['entry'].delete (0, tk.END)
         self.ANSWER['entry'].insert (0, answer)
         self.ANSWER['entry'].config (state='readonly')
+
+    def __format_number(self, *args):
+        try:
+            for ques in self.QUESTIONS:
+                value_float = float (ques['var'].get ())
+                formatted_value = '{:,.0f}'.format (value_float)
+                ques['var'].set (formatted_value)
+        except:
+            pass
 
 class folder(AppWindow):
 
@@ -508,7 +510,7 @@ class main:
         formulas_button.pack (padx=5, pady=5)
 
         # Create a button that opens the Tap Drill Chart
-        formulas_button = tk.Button (self.root, text="Tap Drill Chart", command=lambda :webbrowser.open_new('https://www.lincolnmachine.com/tap_drill_chart.html'), font=button_font)
+        formulas_button = tk.Button (self.root, text="Tap Drill Chart", command=lambda :webbrowser.open_new(DRILL_CHART), font=button_font)
         formulas_button.pack (padx=5, pady=5)
 
         # Create a button that opens the Tap Drill Chart
@@ -520,7 +522,6 @@ class main:
 
         # Tkinter main loop
         self.root.mainloop()
-
 
 class code_storage(AppWindow):
 
@@ -616,7 +617,6 @@ class code_storage(AppWindow):
         for index, (val, k) in enumerate (l):
             self.tree.move (k, '', index)
 
-
 def check_folders():
     if not os.path.exists(DIR):
         os.makedirs(DIR)
@@ -631,6 +631,18 @@ def check_folders():
         url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/icon.png"
         response = requests.get (url)
         with open (ICON, "wb") as file:
+            file.write (response.content)
+    # download drill chart if doesnt exist
+    if not os.path.exists(DRILL_CHART):
+        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/drill_chart.html"
+        response = requests.get (url)
+        with open (DRILL_CHART, "wb") as file:
+            file.write (response.content)
+    # download css chart if doesnt exist
+    if not os.path.exists(CSS):
+        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/styles.css"
+        response = requests.get (url)
+        with open (CSS, "wb") as file:
             file.write (response.content)
 
 if __name__ == '__main__':
