@@ -1,5 +1,5 @@
 {
-  "standard threads": [
+  "threads": [
     {
       "name": "0-80",
       "class": "2B",
