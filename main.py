@@ -11,6 +11,8 @@ FILENAME = os.path.join(DIR,'machinistcheetsheet.json')
 ICON = os.path.join(DIR, 'icon.png')
 CSS = os.path.join(DIR, 'styles.css')
 DRILL_CHART = os.path.join(DIR, 'drill_chart.html')
+VERSION_FILE = os.path.join(DIR, 'version.json')
+EXE_FILE = os.path.join(DIR, 'Machinist Helper.exe')
 
 
 BACKGROUND_IMAGE = os.path.join(DIR, 'background.png')
@@ -22,7 +24,7 @@ version 1.1 Revisions:
     - Added Tap Drill Chart to main function
 version 1.2 Revision:
     - Added a Folder Creator to Create generic folders that Corning uses.
-version 1.3 Revision:
+version 1.3.1 Revision:
     - Revised all classes to start from AppWindow and read everything from json file
 
 ***** IDEAS *****
@@ -30,9 +32,12 @@ TODO: Format numbers in the formulas to have commas: 15000 = 15,000
 *****
 """
 
-VERSION = "1.3.650"
-PROGRAMMED_TEXT = f"Powered by Winchester Automation Version {VERSION}"
+VERSION = "1.0.0"
+PROGRAMMED_TEXT = ""
 
+def update_footer():
+    global PROGRAMMED_TEXT
+    PROGRAMMED_TEXT = f"Powered by Winchester Automation Version {VERSION}"
 
 class AppWindow:
     def __init__(self, parent=None, title=None):
@@ -51,7 +56,7 @@ class AppWindow:
         if title != None:
             self.TOP_LEVEL.title(PROGRAM_TITLE + " - " + title)
         else:
-            self.TOP_LEVEL.title(PROGRAM_TITLE)            
+            self.TOP_LEVEL.title(PROGRAM_TITLE)
 
         # Set the window background color
         self.TOP_LEVEL.config(bg=BACKGROUND)
@@ -252,7 +257,6 @@ class thread_helper(AppWindow):
         self.thread_menu_type['menu'].config (font=('Courier', 14))
         self.thread_menu_type.grid(padx=10, row=0, column=1)
         self.update_entries()
-
 
 class formulas(AppWindow):
 
@@ -620,8 +624,51 @@ class code_storage(AppWindow):
             self.tree.move (k, '', index)
 
 def check_folders():
+    global VERSION
+    NEED_TO_UPDATE = False
+    # if folder doesnt exist, create it
     if not os.path.exists(DIR):
         os.makedirs(DIR)
+
+    # download version if doesnt exist
+    url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/version.json"
+    response = requests.get (url)
+    temp_name = os.path.join(DIR, "temp.json")
+    USED_TEMP = True
+    if not os.path.exists(VERSION_FILE):
+        temp_name = VERSION_FILE
+        USED_TEMP = False
+
+    # download latest version number
+    with open (temp_name, "wb") as file:
+        file.write (response.content)
+
+    # load version number
+    current = {"version":"1.0.0"}
+    latest= {"version":"1.0.0"}
+    with open (VERSION_FILE, "r") as f:
+        current = json.load (f)
+    # load version number
+    if USED_TEMP:
+        with open (temp_name, "r") as f:
+            latest = json.load (f)
+
+    if current['version'] == latest['version']:
+        print("Most recent version, No need to update data.")
+    else:
+        NEED_TO_UPDATE = True
+        print(f"Current: {current['version']} and Latest: {latest['version']}, Need to Update.")
+    VERSION = current['version']
+    print(VERSION)
+    # if temp exists, remove it
+    if USED_TEMP:
+        if os.path.exists(os.path.join(DIR, "temp.json")):
+            if NEED_TO_UPDATE:
+                if os.path.exists (VERSION_FILE):
+                    os.remove (VERSION_FILE)
+                    os.rename(os.path.join(DIR, "temp.json"), VERSION_FILE)
+            os.remove(os.path.join(DIR, "temp.json"))
+
     # download json file
     if not os.path.exists(FILENAME):
         url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/machinistcheetsheet.json"
@@ -647,6 +694,8 @@ def check_folders():
         with open (CSS, "wb") as file:
             file.write (response.content)
 
+
 if __name__ == '__main__':
     check_folders()
+    update_footer()
     main()
