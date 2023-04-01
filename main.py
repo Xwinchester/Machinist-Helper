@@ -1,17 +1,17 @@
-import json, os, webbrowser, requests
+import json, os, webbrowser, urllib.request
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 # globals
 DIR = os.path.join ('C:\\', 'Users', os.getlogin (), 'Machinist Cheat Sheet')
 BACKGROUND = '#345760'
-FILENAME = os.path.join(DIR,'machinistcheetsheet.json')
+FILENAME = os.path.join(DIR,'machinistcheatsheet.json')
 ICON = os.path.join(DIR, 'icon.png')
 CSS = os.path.join(DIR, 'styles.css')
 DRILL_CHART = os.path.join(DIR, 'drill_chart.html')
-VERSION_FILE = os.path.join(DIR, 'version.json')
+VERSION_FILE = os.path.join(DIR, 'config.json')
 EXE_FILE = os.path.join(DIR, 'Machinist Helper.exe')
 
 
@@ -19,10 +19,10 @@ BACKGROUND_IMAGE = os.path.join(DIR, 'background.png')
 PROGRAM_TITLE = "Machinist Cheat Sheet"
 # version
 """
-version 1.1 Revisions:
+version 1.1.0 Revisions:
     - Added A Option Menu to grab all taps involved in tap size
     - Added Tap Drill Chart to main function
-version 1.2 Revision:
+version 1.2.0 Revision:
     - Added a Folder Creator to Create generic folders that Corning uses.
 version 1.3.1 Revision:
     - Revised all classes to start from AppWindow and read everything from json file
@@ -32,14 +32,89 @@ TODO: Format numbers in the formulas to have commas: 15000 = 15,000
 *****
 """
 
-VERSION = "1.0.0"
-PROGRAMMED_TEXT = ""
 
-def update_footer():
-    global PROGRAMMED_TEXT
-    PROGRAMMED_TEXT = f"Powered by Winchester Automation Version {VERSION}"
+class AppUpdater:
+    # Define the URL to the GitHub repository where the JSON file is located
+    REPO_URL = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/"
+    DIR = os.path.join ('C:\\', 'Users', os.getlogin (), 'Machinist Cheat Sheet')
+    # make sure version file is index 0
+    # if skip == 1, will skip updated that item on force updates
+    FILES = [{"name":"config.json", "skip":0},
+             {"name":"drill_chart.html", "skip":0},
+             {"name":"icon.png", "skip":0},
+             {"name":"machinistcheatsheet.json", "skip":0},
+             {"name":"styles.css", "skip":0}]
+    LATEST_VERSION = ""
+    LOCAL_VERSION = ""
+
+    def __init__(self, root):
+        self.root = root
+        self.__check_and_create_directory()
+        self.get_local_version() # grabs local version
+        self.get_latest_version ()  # grabs most recent version from Github
+        #print(self.LATEST_VERSION, "|", self.LOCAL_VERSION)
+        self.check_if_files_exist ()
+        self.check_version ()
+
+    def __check_and_create_directory(self):
+        if not os.path.exists (self.DIR):
+            os.makedirs (self.DIR)
+
+    def check_version(self):
+        # Compare local version to remote version
+        if self.LOCAL_VERSION != self.LATEST_VERSION:
+            self.force_update (self.LATEST_VERSION)
+
+    def download_json(self):
+        # Download the version JSON file from the GitHub repository
+        try:
+            with urllib.request.urlopen (self.REPO_URL + self.FILES[0]["name"]) as url:
+                data = json.loads (url.read ().decode ())
+                self.force_update (data)
+        except urllib.error.URLError as e:
+            messagebox.showerror ("Error", f"Unable to download version information: {e.reason}")
+
+    def force_update(self, version_data):
+        # Download and replace the main application file
+        try:
+            # Save the updated version JSON file
+            for file in self.FILES:
+                    # Download the file and save it to the destination directory
+                    if file["skip"]>0:
+                        continue
+                    with urllib.request.urlopen (self.REPO_URL + file["name"]) as url, open (os.path.join (self.DIR, file["name"]),"wb") as f:
+                        f.write (url.read ())
+            # Notify the user that the update is complete and restart the application
+            messagebox.showinfo ("Update", "The application has been updated.")
+        except urllib.error.URLError as e:
+            messagebox.showerror ("Error", f"Unable to download update: {e.reason}")
+
+    def get_local_version(self):
+        # Check if the version JSON file exists locally
+        if os.path.exists (os.path.join(self.DIR, self.FILES[0]["name"])):
+            with open (os.path.join(self.DIR, self.FILES[0]["name"]), "r") as f:
+                local_version_data = json.load (f)
+            self.LOCAL_VERSION = local_version_data["version"]
+
+    def get_latest_version(self):
+        # Download the version JSON file from the GitHub repository
+        try:
+            with urllib.request.urlopen (self.REPO_URL + self.FILES[0]["name"]) as url:
+                self.LATEST_VERSION = json.loads (url.read ().decode ())['version']
+        except urllib.error.URLError as e:
+            messagebox.showerror ("Error", f"Unable to download version information: {e.reason}")
+
+    def check_if_files_exist(self):
+        for file in self.FILES:
+            if not os.path.exists (os.path.join(self.DIR ,file["name"])):
+                # Download the file and save it to the destination directory
+                with urllib.request.urlopen (self.REPO_URL + file["name"]) as url, open (os.path.join(self.DIR ,file["name"]), "wb") as f:
+                    f.write (url.read ())
 
 class AppWindow:
+
+    VERSION = ""
+
     def __init__(self, parent=None, title=None):
         self.MAIN_ROOT = parent
         x, y = self.MAIN_ROOT.winfo_x(), self.MAIN_ROOT.winfo_y()
@@ -71,12 +146,21 @@ class AppWindow:
         self.TOP_LEVEL.resizable(width=False, height=False)
 
         # Setup Footer
+        self.__get_local_version()
+        PROGRAMMED_TEXT = f"Powered by Winchester Automation Version {self.VERSION}"
         Label(self.TOP_LEVEL, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
 
 
     def __on_close(self):
         self.MAIN_ROOT.deiconify()
         self.TOP_LEVEL.destroy()
+
+    def __get_local_version(self):
+        # Check if the version JSON file exists locally
+        if os.path.exists (os.path.join(DIR, "config.json")):
+            with open (os.path.join(DIR, "config.json"), "r") as f:
+                local_version_data = json.load (f)
+            self.VERSION = local_version_data["version"]
 
 class thread_helper(AppWindow):
 
@@ -489,15 +573,18 @@ class folder(AppWindow):
 
 class main:
 
+    VERSION = ""
+    PROGRAMMED_TEXT = ""
+
     def __init__(self):
         # Create a new Tkinter window
         self.root = tk.Tk ()
+        self.UPDATER = AppUpdater(self.root)
         self.root.title (PROGRAM_TITLE)
         self.root.config (bg=BACKGROUND)
         self.root.geometry ("660x425")
         self.root.iconphoto(True, PhotoImage(file=ICON))
         self.root.resizable(width=False, height=False)
-
 
         # Create the label at the top of the menu
         lbl = Label(self.root, text="Machinist Cheat Sheet", font=(None, 20), bg=BACKGROUND).pack(padx=5, pady=5)
@@ -524,6 +611,8 @@ class main:
         formulas_button.pack (padx=5, pady=5)
 
         # programmed label
+
+        PROGRAMMED_TEXT = f"Powered by Winchester Automation Version {self.UPDATER.LOCAL_VERSION}"
         Label(self.root, text=PROGRAMMED_TEXT, bg=BACKGROUND, font=("Courier", 8)).pack(side=BOTTOM)
 
         # Tkinter main loop
@@ -623,79 +712,5 @@ class code_storage(AppWindow):
         for index, (val, k) in enumerate (l):
             self.tree.move (k, '', index)
 
-def check_folders():
-    global VERSION
-    NEED_TO_UPDATE = False
-    # if folder doesnt exist, create it
-    if not os.path.exists(DIR):
-        os.makedirs(DIR)
-
-    # download version if doesnt exist
-    url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/version.json"
-    response = requests.get (url)
-    temp_name = os.path.join(DIR, "temp.json")
-    USED_TEMP = True
-    if not os.path.exists(VERSION_FILE):
-        temp_name = VERSION_FILE
-        USED_TEMP = False
-
-    # download latest version number
-    with open (temp_name, "wb") as file:
-        file.write (response.content)
-
-    # load version number
-    current = {"version":"1.0.0"}
-    latest= {"version":"1.0.0"}
-    with open (VERSION_FILE, "r") as f:
-        current = json.load (f)
-    # load version number
-    if USED_TEMP:
-        with open (temp_name, "r") as f:
-            latest = json.load (f)
-
-    if current['version'] == latest['version']:
-        print("Most recent version, No need to update data.")
-    else:
-        NEED_TO_UPDATE = True
-        print(f"Current: {current['version']} and Latest: {latest['version']}, Need to Update.")
-    VERSION = current['version']
-    print(VERSION)
-    # if temp exists, remove it
-    if USED_TEMP:
-        if os.path.exists(os.path.join(DIR, "temp.json")):
-            if NEED_TO_UPDATE:
-                if os.path.exists (VERSION_FILE):
-                    os.remove (VERSION_FILE)
-                    os.rename(os.path.join(DIR, "temp.json"), VERSION_FILE)
-            os.remove(os.path.join(DIR, "temp.json"))
-
-    # download json file
-    if not os.path.exists(FILENAME):
-        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/machinistcheetsheet.json"
-        response = requests.get (url)
-        with open (FILENAME, "wb") as file:
-            file.write (response.content)
-    # download icon if doesnt exist
-    if not os.path.exists(ICON):
-        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/icon.png"
-        response = requests.get (url)
-        with open (ICON, "wb") as file:
-            file.write (response.content)
-    # download drill chart if doesnt exist
-    if not os.path.exists(DRILL_CHART):
-        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/drill_chart.html"
-        response = requests.get (url)
-        with open (DRILL_CHART, "wb") as file:
-            file.write (response.content)
-    # download css chart if doesnt exist
-    if not os.path.exists(CSS):
-        url = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/styles.css"
-        response = requests.get (url)
-        with open (CSS, "wb") as file:
-            file.write (response.content)
-
-
 if __name__ == '__main__':
-    check_folders()
-    update_footer()
     main()
