@@ -4,6 +4,22 @@
   background-color:#345760;
 }
 
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.input{
+    font-size:30px;
+    text-align:center;
+    background-color:white;
+    margin: 0 5px;
+    align-items = center;
+}
+
 h4{
     font-size:30px;
     text-align:center;
@@ -44,4 +60,20 @@ td{
 
 .middle{
   background-color:#345760;
+}
+
+button {
+  background-color: #4297c9;
+  font-size: 20px;
+  width: 460px;
+  border: 3px solid black;
+  border-radius: 20px;
+}
+
+button:hover {
+  background-color: #12b1bc;
+}
+
+button:active {
+  background-color: #427cc9;
 }
