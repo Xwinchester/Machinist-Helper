@@ -6,13 +6,14 @@ from tkinter import filedialog, messagebox
 
 # globals
 DIR = os.path.join ('C:\\', 'Users', os.getlogin (), 'Machinist Cheat Sheet')
+#CONFIG_DIR = os.path.join ('C:\\', 'Users', os.getlogin (), 'Machinist Cheat Sheet')
 BACKGROUND = '#345760'
 FILENAME = os.path.join(DIR,'machinistcheatsheet.json')
 ICON = os.path.join(DIR, 'icon.png')
 CSS = os.path.join(DIR, 'styles.css')
 DRILL_CHART = os.path.join(DIR, 'drill_chart.html')
 VERSION_FILE = os.path.join(DIR, 'config.json')
-EXE_FILE = os.path.join(DIR, 'Machinist Helper.exe')
+#EXE_FILE = os.path.join(DIR, 'Machinist Helper.exe')
 
 
 BACKGROUND_IMAGE = os.path.join(DIR, 'background.png')
@@ -36,7 +37,6 @@ TODO: Format numbers in the formulas to have commas: 15000 = 15,000
 class AppUpdater:
     # Define the URL to the GitHub repository where the JSON file is located
     REPO_URL = "https://raw.githubusercontent.com/Xwinchester/Machinist-Helper/main/"
-    DIR = os.path.join ('C:\\', 'Users', os.getlogin (), 'Machinist Cheat Sheet')
     # make sure version file is index 0
     # if skip == 1, will skip updated that item on force updates
     FILES = [{"name":"config.json", "skip":0},
@@ -48,6 +48,8 @@ class AppUpdater:
     LOCAL_VERSION = ""
 
     def __init__(self, root):
+        global DIR
+        self.DIR = DIR
         self.root = root
         self.__check_and_create_directory()
         self.get_local_version() # grabs local version
@@ -85,7 +87,7 @@ class AppUpdater:
                     with urllib.request.urlopen (self.REPO_URL + file["name"]) as url, open (os.path.join (self.DIR, file["name"]),"wb") as f:
                         f.write (url.read ())
             # Notify the user that the update is complete and restart the application
-            messagebox.showinfo ("Update", "The application has been updated.")
+            messagebox.showinfo ("Update", "The application has been updated. Please Reopen Program.")
         except urllib.error.URLError as e:
             messagebox.showerror ("Error", f"Unable to download update: {e.reason}")
 
@@ -376,11 +378,8 @@ class formulas(AppWindow):
         self.question_frame = LabelFrame (self.TOP_LEVEL, text="", bg=BACKGROUND, font=(None, 18))
         self.question_frame.pack (padx=10, pady=10)
 
-
-
         # Create a trace to keep track of the option selected
         self.selected_formula.trace ("w", self.__fill_in_questions)
-
 
         self.__fill_in_questions ()
 
@@ -410,15 +409,14 @@ class formulas(AppWindow):
         self.ANSWER["lbl"].grid (pady=5, row=idx, column=0)
         self.ANSWER["entry"].grid (pady=5, row=idx, column=1)
 
-
     def __create_question(self, name):
         label = Label (self.question_frame, text=name+":", bg=BACKGROUND, font=(None, 15))
-        double_var = DoubleVar(self.TOP_LEVEL)
-        entry = Entry (self.question_frame, textvariable=double_var, font=(None, 15))
+        str_var = StringVar(self.TOP_LEVEL)
+        str_var.set("0.")
+        entry = Entry (self.question_frame, textvariable=str_var, font=(None, 15))
 
         entry.bind ("<FocusOut>", self.__solve_equaiton)
-        #double_var.trace("w", self.__format_number)
-        return {"lbl":label, "entry":entry, 'var':double_var}
+        return {"lbl":label, "entry":entry, 'var':str_var}
 
     def __create_answer(self):
         # Create Label and Entry for the Answer
@@ -435,7 +433,12 @@ class formulas(AppWindow):
         formula = None
         try:
             for q in self.QUESTIONS:
-                entry_data.append(float(eval(q["entry"].get())))
+                entry = float(eval(q['entry'].get().replace(",", "")))
+                try:
+                    q['var'].set(f"{entry:,}")
+                except:
+                    pass
+                entry_data.append(entry)
             formula = self.CURRENT_FORMULA["formula"]
 
         except:
@@ -445,7 +448,7 @@ class formulas(AppWindow):
         for i in range(len(self.CURRENT_FORMULA['questions'])):
             formula = formula.replace(f"[{i}]", str(entry_data[i]))
 
-        print (f"Entry: {entry_data} | {formula}")
+        #print (f"Entry: {entry_data} | {formula}")
         solution = round(eval(formula), 4)
 
         # set answer entry to the solutioin
