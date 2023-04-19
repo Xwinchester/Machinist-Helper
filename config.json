@@ -1,4 +1,7 @@
 {
-    "version": "1.3.2", 
-    "path":""
+ "directory": "C:\\Users\\[USER]\\Machinist Cheat Sheet",
+ "config_file": "C:\\Users\\[USER]\\Machinist Cheat Sheet\\config.json",
+ "json_file": "C:\\Users\\[USER]\\Machinist Cheat Sheet\\machinistcheatsheet.json",
+ "drill_chart": "C:\\Users\\[USER]\\Machinist Cheat Sheet\\drill_chart.html",
+ "icon": "C:\\Users\\[USER]\\Machinist Cheat Sheet\\icon.png"
 }
